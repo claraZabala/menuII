@@ -167,7 +167,7 @@ double max_abs_llista(int n, double *a) {
   double max = a[0];
   for (int i = 1; i < n; i++) {
     if (fabs(max) < fabs(a[i])) {
-      max = fabs(a[i]);
+      max = a[i];
     }
   }
   return max;
