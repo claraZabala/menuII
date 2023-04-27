@@ -1,0 +1,3 @@
+/Users/clara.zabala/CLionProjects/menuII/cmake-build-debug/CMakeFiles/menuII.dir
+/Users/clara.zabala/CLionProjects/menuII/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/clara.zabala/CLionProjects/menuII/cmake-build-debug/CMakeFiles/rebuild_cache.dir
