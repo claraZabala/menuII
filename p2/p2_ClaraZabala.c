@@ -41,10 +41,10 @@ void H(const double x[3], double Hx[2]) {
 // Fila 1: derivades d'H respecte x0, x1, x2
 void DH(const double x[3], double DHx[2][3]) {
   DHx[0][0] = 2.0 * x[0];
-  DHx[0][1] = 2.0 * 1.1 * x[1];
-  DHx[0][2] = 2.0 * 0.9 * x[2];
+  DHx[0][1] = 2.2 * x[1];
+  DHx[0][2] = 1.8 * x[2];
   DHx[1][0] = 2.0 * x[0] - 1.0;
-  DHx[1][1] = 2.0 * 1.2 * x[1];
+  DHx[1][1] = 2.4 * x[1];
   DHx[1][2] = -1.0;
 }
 
@@ -112,22 +112,22 @@ int prediccio(int sig, double h, double x[3]) {
       (DHx[0][0] * DHx[1][0] + DHx[0][1] * DHx[1][1] + DHx[0][2] * DHx[1][2]) /
       (norma2(DHx[0]) * norma2(DHx[1]));
   printf("pred: cos=%lf\n", cos);
-  if (fabs(cos) > TOL) {
-    for (int i = 0; i < 3; i++) {
-      V[i] = DHx[0][(i + 1) % 3] * DHx[1][(i + 2) % 3] -
-             DHx[0][(i + 2) % 3] * DHx[1][(i + 1) % 3];
-    }
-    normaV = norma2(V);
-    printf("pred: Vt=(%+.2le,%+.2le,%+.2le)\n", V[0] / normaV, V[1] / normaV,
-           V[2] / normaV);
-
-    for (int i = 0; i < 3; i++) {
-      x[i] += sig * h * V[i] / normaV;
-    }
-    printf("pred: x=(%+.6le,%+.6le,%+.6le)\n", x[0], x[1], x[2]);
-    return 0;
+  if (fabs(cos) < TOL) {
+    return 1;
   }
-  return 1;
+  for (int i = 0; i < 3; i++) {
+    V[i] = DHx[0][(i + 1) % 3] * DHx[1][(i + 2) % 3] -
+           DHx[0][(i + 2) % 3] * DHx[1][(i + 1) % 3];
+  }
+  normaV = norma2(V);
+  printf("pred: Vt=(%+.2le,%+.2le,%+.2le)\n", V[0] / normaV, V[1] / normaV,
+         V[2] / normaV);
+
+  for (int i = 0; i < 3; i++) {
+    x[i] += sig * h * V[i] / normaV;
+  }
+  printf("pred: x=(%+.6le,%+.6le,%+.6le)\n", x[0], x[1], x[2]);
+  return 0;
 }
 
 /* resoldre el sistema amb Newton-Raphson
