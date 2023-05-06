@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOL 1E-4
+#define TOL 1E-8
 
 // avalua la funció H en el punt x
-void H(double x[3], double Hx[2]);
+void H(const double x[3], double Hx[2]);
 
 // avalua la matriu DH en el punt x.
-void DH(double x[3], double DHx[2][3]);
+void DH(const double x[3], double DHx[2][3]);
 
 // x[] conté un punt conegut de la corba.
 // Si es pot fer correctament la predicció, aquesta es posa a x[] i es retorna
@@ -25,21 +25,21 @@ int correccio(double h, double x0[3], double x[3], int kmax, double prec);
 // s’invocarà des de la funció de correcció. Si el determinant de la matriu és
 // no nul (amb una certa tolerància), la solució ha de ser a x[] i cal retornar
 // el valor 0; en cas contrari es retorna el valor 1
-int resoldre(double A[3][3], double b[3], double x[3]);
+int resoldre(double A[3][3], const double b[3], double x[3]);
 
 double norma2(double x[3]);
 double determinant(double A[3][3]);
 
 // (x0)^2 + 1.1(x1)^2 + 0.9(x2)^2 − 0.9 = 0
 // (x0)^2 − 1.2(x1)^2 − (x0 − 1) − x2 = 0
-void H(double x[3], double Hx[2]) {
+void H(const double x[3], double Hx[2]) {
   Hx[0] = x[0] * x[0] + 1.1 * x[1] * x[1] + 0.9 * x[2] * x[2] - 0.9;
   Hx[1] = x[0] * x[0] - 1.2 * x[1] * x[1] - (x[0] - 1.0) - x[2];
 }
 
 // Fila 0: derivades d'H respecte x0, x1, x2
 // Fila 1: derivades d'H respecte x0, x1, x2
-void DH(double x[3], double DHx[2][3]) {
+void DH(const double x[3], double DHx[2][3]) {
   DHx[0][0] = 2.0 * x[0];
   DHx[0][1] = 2.0 * 1.1 * x[1];
   DHx[0][2] = 2.0 * 0.9 * x[2];
@@ -48,8 +48,8 @@ void DH(double x[3], double DHx[2][3]) {
   DHx[1][2] = -1.0;
 }
 
-int resoldre(double A[3][3], double b[3], double x[3]) {
-  double det, cramer[3][3];
+int resoldre(double A[3][3], const double b[3], double x[3]) {
+  double det, cramer[3][3], A_inv[3][3];
   det = determinant(A);
   // printf("det=%+.6le\n", det);
   if (fabs(det) < TOL) {
@@ -76,32 +76,17 @@ int resoldre(double A[3][3], double b[3], double x[3]) {
     }
   }
   x[2] = determinant(cramer) / det;
+  /*for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < 3; i++) {
+      A_inv[j][i] =
+          ((A[(i + 1) % 3][(j + 1) % 3] * A[(i + 2) % 3][(j + 2) % 3]) -
+           (A[(i + 1) % 3][(j + 2) % 3] * A[(i + 2) % 3][(j + 1) % 3])) /
+          det;
+    }
+    x[j] = A_inv[j][0] * b[0] + A_inv[j][1] * b[1] + A_inv[j][2] * b[2];
+  }*/
   // printf("z = (%+.6le, %+.6le, %+.6le)\n", x[0], x[1], x[2]);
   return 0;
-  /* GAUSS - no funciona perquè no comprova si són 0 les components
-  for (int i = 0; i < 3; i++) {
-    for (int j = i + 1; j < 3; j++) {
-      c = A[j][i] / A[i][i];
-      for (int k = i; k < 4; k++) {
-        if (k == 3) {
-          b[j] -= c * b[i];
-          printf("b[%d] = %f\n", j, b[j]);
-        } else {
-          A[j][k] -= c * A[i][k];
-          printf("A[%d][%d] = %f\n", j, k, A[j][k]);
-        }
-      }
-    }
-  }
-  x[2] = b[2] / A[2][2];
-  for (int i = 1; i > -1; i--) {
-    s = 0;
-    for (int j = i + 1; j < 3; j++) {
-      s += (A[i][j] * x[j]);
-      x[i] = (b[i] - s) / A[i][i];
-    }
-  }
-  */
 }
 
 double determinant(double A[3][3]) {
@@ -117,11 +102,9 @@ double determinant(double A[3][3]) {
  * El punt predit és Q = P + sig · h ·V / ||V||2
  */
 int prediccio(int sig, double h, double x[3]) {
-  double DHx[2][3], V[3], normaV, cos = 0.0;
+  double DHx[2][3], V[3], normaV, cos;
   DH(x, DHx);
-  for (int i = 0; i < 3; i++) {
-    cos += DHx[0][i] * DHx[1][i];
-  }
+  cos = DHx[0][0] * DHx[1][0] + DHx[0][1] * DHx[1][1] + DHx[0][2] * DHx[1][2];
   cos /= (norma2(DHx[0]) * norma2(DHx[1]));
   printf("pred: cos=%lf\n", cos);
   if (fabs(cos) > TOL) {
@@ -154,9 +137,9 @@ int correccio(double h, double x0[3], double x[3], int kmax, double prec) {
   int k = 0;
   double DF[3][3], F[3];
   double Hx[2], DHx[2][3], z[3], err = 1.0;
-  H(x, Hx);
-  DH(x, DHx);
   while (k < kmax && err > prec) {
+    H(x, Hx);
+    DH(x, DHx);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 3; j++) {
         DF[i][j] = DHx[i][j];
@@ -181,12 +164,11 @@ int correccio(double h, double x0[3], double x[3], int kmax, double prec) {
     x[1] += z[1];
     x[2] += z[2];
     err = norma2(z);
-    H(x, Hx);
-    DH(x, DHx);
+    printf("corr: err=%+.6le\n", err);
     k++;
   }
   if (k == kmax && err > prec) {
-    printf("Newton no ha convergit en les %d iteracions.\n", kmax);
+    printf("corr: err=%+.6le\n", err);
     return 1;
   }
   printf("corr: k = %d, err = %+.6le, x=(%+.6le, %+.6le, %+.6le)\n", k, err,
