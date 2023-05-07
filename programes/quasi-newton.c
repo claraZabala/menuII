@@ -5,14 +5,8 @@
 /* Defining equation to be solved.
    Change this equation to solve another problem. */
 int F(double x, double y, double F[2]) {
-  // exercici 2
   F[0] = x * x * x + y * y + x + y - 2.0;
   F[1] = x * y * y + x * x + x - y;
-  // exercici 3
-  /*
-  F[0] = x * x * x + y * y + x + y - 0.01;
-  F[1] = x * y * y + x * x + x - y;
-   */
 }
 
 /* Defining derivative of f(x).
@@ -36,8 +30,9 @@ int main() {
   printf("Enter maximum iteration:\n");
   scanf("%d", &N);
 
+  DF(x0, y0, DFx);
+
   do {
-    DF(x0, y0, DFx);
     printf("DF=((%lf,%lf)\n(%lf,%lf))\n", DFx[0][0], DFx[0][1], DFx[1][0],
            DFx[1][1]);
     F(x0, y0, Fx);
