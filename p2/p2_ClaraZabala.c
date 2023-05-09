@@ -11,34 +11,47 @@ void H(const double x[3], double Hx[2]);
 // avalua la matriu DH en el punt x.
 void DH(const double x[3], double DHx[2][3]);
 
-// x[] conté un punt conegut de la corba.
-// Si es pot fer correctament la predicció, aquesta es posa a x[] i es retorna
-// el valor 0; si no es pot fer, es retorna el valor 1
+/*
+ * x[] conté un punt conegut de la corba.
+ * Si es pot fer correctament la predicció, aquesta es posa a x[] i es retorna
+ * el valor 0; si no es pot fer, es retorna el valor 1
+ */
 int prediccio(int sig, double h, double x[3]);
 
-// x0[] conté la predicció.
-// Si la correcció funciona bé, el nou punt de la corba és a x[] i es retorna el
-// valor 0; però si Newton no convergeix, es retorna el valor 1
+/*
+ * x0[] conté un punt conegut de la corba.
+ * Si la correcció funciona bé, el nou punt de la corba és a x[] i es retorna el
+ * valor 0; però si Newton no convergeix, es retorna el valor 1
+ */
 int correccio(double h, double x0[3], double x[3], int kmax, double prec);
 
-// Resol sistemes lineals Ax = b de 3 equacions i incògnites. Aquesta funció
-// s’invocarà des de la funció de correcció. Si el determinant de la matriu és
-// no nul (amb una certa tolerància), la solució ha de ser a x[] i cal retornar
-// el valor 0; en cas contrari es retorna el valor 1
+/* 
+ * Resol sistemes lineals Ax = b de 3 equacions i incògnites. Aquesta funció
+ * s’invocarà des de la funció de correcció. Si el determinant de la matriu és
+ * no nul (amb una certa tolerància), la solució ha de ser a x[] i cal retornar
+ * el valor 0; en cas contrari es retorna el valor 1
+ */
 int resoldre(double A[3][3], const double b[3], double x[3]);
 
 double norma2(double x[3]);
 double determinant(double A[3][3]);
 
-// (x0)^2 + 1.1(x1)^2 + 0.9(x2)^2 − 0.9 = 0
-// (x0)^2 − 1.2(x1)^2 − (x0 − 1) − x2 = 0
+/*
+ * (x0)^2 + 1.1(x1)^2 + 0.9(x2)^2 − 0.9 = 0
+ * (x0)^2 − 1.2(x1)^2 − (x0 − 1) − x2 = 0
+ */
 void H(const double x[3], double Hx[2]) {
   Hx[0] = x[0] * x[0] + 1.1 * x[1] * x[1] + 0.9 * x[2] * x[2] - 0.9;
   Hx[1] = x[0] * x[0] - 1.2 * x[1] * x[1] - (x[0] - 1.0) - x[2];
 }
 
-// Fila 0: derivades d'H respecte x0, x1, x2
-// Fila 1: derivades d'H respecte x0, x1, x2
+/* 
+ * Fila 0: derivades d'H respecte x0, x1, x2
+ * 2*x0, 2*1.1*x1, 2*0.9*x2
+ *
+ * Fila 1: derivades d'H respecte x0, x1, x2
+ * 2*x0 - 1, -2*1.2*x1, -1
+ */
 void DH(const double x[3], double DHx[2][3]) {
   DHx[0][0] = 2.0 * x[0];
   DHx[0][1] = 2.2 * x[1];
@@ -48,10 +61,10 @@ void DH(const double x[3], double DHx[2][3]) {
   DHx[1][2] = -1.0;
 }
 
+// Resol un sistema 3x3 usant el mètode de Cramer
 int resoldre(double A[3][3], const double b[3], double x[3]) {
   double det, cramer[3][3];
   det = determinant(A);
-  // printf("det=%+.6le\n", det);
   if (fabs(det) < TOL) {
     return 1;
   }
@@ -76,23 +89,15 @@ int resoldre(double A[3][3], const double b[3], double x[3]) {
     }
   }
   x[2] = determinant(cramer) / det;
-  /*for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      A_inv[j][i] =
-          ((A[(i + 1) % 3][(j + 1) % 3] * A[(i + 2) % 3][(j + 2) % 3]) -
-           (A[(i + 1) % 3][(j + 2) % 3] * A[(i + 2) % 3][(j + 1) % 3])) /
-          det;
-    }
-    x[j] = A_inv[j][0] * b[0] + A_inv[j][1] * b[1] + A_inv[j][2] * b[2];
-  }*/
-  // printf("z = (%+.6le, %+.6le, %+.6le)\n", x[0], x[1], x[2]);
   return 0;
 }
 
+// Calcula la norma 2 d'un vector de R3
 double norma2(double x[3]) {
   return sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2));
 }
 
+// Calcula el determinant d'una matriu 3x3
 double determinant(double A[3][3]) {
   return A[0][0] * A[1][1] * A[2][2] + A[0][1] * A[1][2] * A[2][0] +
          A[1][0] * A[2][1] * A[0][2] - A[0][2] * A[1][1] * A[2][0] -
@@ -100,7 +105,8 @@ double determinant(double A[3][3]) {
 }
 
 /*
- * Comprovar si DH(P) té rang 2 amb una tolerància.
+ * FUNCIÓ DE PREDICCIÓ
+ * Comprova si DH(P) té rang 2 amb una tolerància.
  * x inicialment és un punt conegut P de la corba i es fa una nova predicció
  * Fer el producte vectorial V = ∇H0(P) × ∇H1(P)
  * El punt predit és Q = P + sig · h ·V / ||V||2
@@ -130,15 +136,18 @@ int prediccio(int sig, double h, double x[3]) {
   return 0;
 }
 
-/* resoldre el sistema amb Newton-Raphson
- H0(x0, x1, x2) = 0
- H1(x0, x1, x2) = 0
- (||X − P||2)^2 = h^2   -> aquí X és el punt obtingut a predicció
-  -
-  x(k+1) = x(k) + z
-  DF(x(k)) * z = −F(x(k))
+/*
+ * FUNCIÓ DE CORRECCIÓ 
+ * Resol el següent sistema amb Newton-Raphson:
+ * H0(x0, x1, x2) = 0
+ * H1(x0, x1, x2) = 0
+ * (||X − P||2)^2 = h^2   -> aquí X és el punt obtingut a predicció
+ *
+ * x(k+1) = x(k) + z
+ * DF(x(k)) * z = −F(x(k))
+ *
+ * x0 conté el punt P inicial, x conté el punt predit i es va corregint
  */
-// x0 conté el punt P inicial, x conté el punt predit i es va corregint
 int correccio(double h, double x0[3], double x[3], int kmax, double prec) {
   /*
    * F conté el sistema -H0, -H1, h^2-||x-x0||2^2
@@ -161,26 +170,24 @@ int correccio(double h, double x0[3], double x[3], int kmax, double prec) {
     }
     F[2] = pow(h, 2) - pow(x[0] - x0[0], 2) - pow(x[1] - x0[1], 2) -
            pow(x[2] - x0[2], 2);
-    /*printf("DF=(%+.2le,%+.2le,%+.2le)\n(%+.2le,%+.2le,%+.2le)\n"
-           "(%+.2le,%+.2le,%+.2le),\n-F=(%+.2le,%+.2le,%+.2le)\n",
-           DF[0][0], DF[0][1], DF[0][2], DF[1][0], DF[1][1], DF[1][2], DF[2][0],
-           DF[2][1], DF[2][2], F[0], F[1], F[2]);
-           */
+
     if (resoldre(DF, F, z) == 1) {
       printf("No s'ha pogut resoldre el sistema.\n");
       return 1;
     }
+
     x[0] += z[0];
     x[1] += z[1];
     x[2] += z[2];
     err = norma2(z);
-    // printf("corr: err=%+.6le\n", err);
     k++;
   }
+
   if (k == kmax && err > prec) {
     printf("corr: err=%+.6le\n", err);
     return 1;
   }
+
   printf("corr: k = %d, err = %+.6le, x=(%+.6le, %+.6le, %+.6le)\n", k, err,
          x[0], x[1], x[2]);
   return 0;
@@ -218,7 +225,7 @@ int main(void) {
     printf("x introduït incorrectament!");
     return 1;
   }
-  printf("Has introduit el punt (%lf, %lf, %lf)\n", x[0], x[1], x[2]);
+  printf("Has introduit el punt x=(%lf, %lf, %lf)\n", x[0], x[1], x[2]);
   H(x, Hx);
   printf("Hx = (%lf, %lf)\n", Hx[0], Hx[1]);
   if (Hx[0] > prec || Hx[1] > prec) {
