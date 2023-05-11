@@ -8,7 +8,7 @@ def H(x):
 
 
 def DH(x):
-    return np.array([[2 * x[0], 2.2 * x[1], 1.8 * x[2]], [2 * x[0] - 1, 2.4 * x[1], -1]])
+    return np.array([[2 * x[0], 2.2 * x[1], 1.8 * x[2]], [2 * x[0] - 1, -2.4 * x[1], -1]])
 
 
 def prediccio(sig, h, p):
